@@ -9,30 +9,25 @@
 </head>
 <body>
 <main id="app">
-
-  <!-- HOME -->
   <section id="screen-home" class="screen">
     <h1>猜猜我</h1>
-    <p class="tagline">互相出 5 道单选题，看看对方有多懂你。</p>
+    <p class="tagline">随机抽题，各自选答案，再猜对方。</p>
     <div class="flowcard" aria-label="玩法流程">
-      <p>1. 你出 5 道题，生成链接发给对方</p>
-      <p>2. 对方答题后，反过来出 5 道题发回给你</p>
-      <p>3. 你答完，双方得分当场揭晓</p>
+      <p>1. 系统随机给你 5 道题，先选出“你自己的答案”</p>
+      <p>2. 发链接给对方，对方猜你的答案</p>
+      <p>3. 对方再回答 5 道自己的题，你来猜</p>
+      <p>4. 双方结果当场揭晓</p>
     </div>
-    <button id="btn-start" class="btn btn-primary">我来出题</button>
+    <button id="btn-start" class="btn btn-primary">开始游戏</button>
     <p class="privacy-note">游戏程序不会把答案上传到服务器。</p>
   </section>
-
-  <!-- A_CREATE / B_CREATE (共用) -->
-  <section id="screen-create" class="screen hidden">
-    <h2 id="create-title">出 5 道题</h2>
-    <p class="hint" id="create-sub">每题 4 个选项，勾选你认为的正确答案。题目 ≤80 字，选项 ≤30 字。</p>
-    <div id="create-form"></div>
-    <div id="create-error" class="inline-error" role="alert"></div>
-    <button id="btn-generate" class="btn btn-primary">生成链接</button>
+  <section id="screen-answer" class="screen hidden">
+    <h2 id="answer-title">回答问题</h2>
+    <p class="hint" id="answer-sub"></p>
+    <div id="answer-form"></div>
+    <div id="answer-error" class="inline-error" role="alert"></div>
+    <button id="btn-submit-answers" class="btn btn-primary" disabled>提交</button>
   </section>
-
-  <!-- SHARE_TO_B / SHARE_BACK_TO_A (共用) -->
   <section id="screen-share" class="screen hidden">
     <h2 id="share-title">分享链接</h2>
     <p class="hint" id="share-sub"></p>
@@ -42,46 +37,27 @@
       <button id="btn-copy" class="btn btn-secondary">复制链接</button>
     </div>
     <p id="copy-feedback" class="hint" aria-live="polite"></p>
-    <p class="privacy-note">链接里的内容就是题目和答案，本身可见——Base64URL 只是编码，不是加密。</p>
+    <p class="privacy-note">链接里的内容包含题目和答案；Base64URL 只是编码，不是加密。</p>
     <button id="btn-restart-from-share" class="btn btn-text">重新开始</button>
   </section>
-
-  <!-- B_ANSWER_A / A_ANSWER_B (共用) -->
-  <section id="screen-answer" class="screen hidden">
-    <h2 id="answer-title">回答问题</h2>
-    <p class="hint" id="answer-sub"></p>
-    <div id="answer-form"></div>
-    <div id="answer-error" class="inline-error" role="alert"></div>
-    <button id="btn-submit-answers" class="btn btn-primary" disabled>提交答案</button>
-  </section>
-
-  <!-- RESULT -->
   <section id="screen-result" class="screen hidden">
     <h2>结果揭晓</h2>
     <div class="score-row">
-      <div class="scorecard">
-        <p class="score-label" id="score-a-label">TA 懂你</p>
-        <p class="score-num" id="score-a">–/5</p>
-      </div>
-      <div class="scorecard">
-        <p class="score-label" id="score-b-label">你懂 TA</p>
-        <p class="score-num" id="score-b">–/5</p>
-      </div>
+      <div class="scorecard"><p class="score-label" id="score-a-label">TA 猜中你的答案</p><p class="score-num" id="score-a">–/5</p></div>
+      <div class="scorecard"><p class="score-label" id="score-b-label">你猜中 TA 的答案</p><p class="score-num" id="score-b">–/5</p></div>
     </div>
     <button id="btn-detail-toggle" class="btn btn-text">逐题对照 ▾</button>
     <div id="result-detail" class="hidden"></div>
     <button id="btn-home-from-result" class="btn btn-primary">再玩一局</button>
   </section>
-
-  <!-- ERROR -->
   <section id="screen-error" class="screen hidden">
     <h2>⚠️</h2>
     <p class="error-main">这个链接无效或已经损坏。</p>
-    <p class="hint">如果链接是别人手动转发时被截断的，请让对方重新发送完整链接。</p>
+    <p class="hint">如果链接被截断，请让对方重新发送完整链接。</p>
     <button id="btn-home-from-error" class="btn btn-primary">返回首页</button>
   </section>
-
 </main>
+<script src="question-bank.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
