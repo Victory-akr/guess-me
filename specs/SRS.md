@@ -1,77 +1,62 @@
-# SRS · 《猜猜我》MVP
+# SRS · 《猜猜我》MVP v3
 
 ## 1. 技术栈约束（硬性）
 
-允许：HTML、CSS、Vanilla JavaScript。
-禁止：React/Vue/Angular、Node.js 后端、npm/构建系统、数据库、API、云函数、第三方 SDK、登录、账号、广告、Analytics、WebSocket、外部字体、外部图片、AI API。
-运行方式：直接双击打开 `index.html`（file:// 可用），或任意静态托管。
+允许：HTML、CSS、Vanilla JS。禁止：框架、后端、npm/构建、数据库、API、第三方 SDK、登录、广告、Analytics、WebSocket、外部字体/图片、AI API、Cookie/localStorage/sessionStorage/IndexedDB。
+运行：双击 index.html（file://）或静态托管。
 
-## 2. 页面状态机（必须实现的 8 个状态）
+## 2. 状态机
 
-HOME → A_CREATE → SHARE_TO_B → B_ANSWER_A → B_CREATE → SHARE_BACK_TO_A → A_ANSWER_B → RESULT
-（另加：ERROR = 无效链接提示态）
+HOME →(开始) A_SELF →(提交) SHARE_TO_B → [对方] B_GUESS →(提交) B_SELF →(提交) SHARE_BACK_TO_A → [对方] A_GUESS →(提交) RESULT。带 Fragment 入口解析失败 → ERROR。角色字段 role 仅存内存，不进 URL。
 
-路由规则（由 URL Fragment 决定入口）：
-
-| Fragment | 进入状态 |
-|---|---|
-| 无 | HOME |
-| `#<stage=1 数据>` | B_ANSWER_A（后续经 B_CREATE → SHARE_BACK_TO_A） |
-| `#<stage=2 数据>` | A_ANSWER_B（答完 → RESULT） |
-| 解析失败 / 校验失败 | ERROR |
-
-## 3. 数据结构（version 1）
+## 3. 数据结构（protocolVersion=3）
 
 ```json
-{
-  "version": 1,
-  "stage": 1,
-  "a": { "questions": [ { "question": "...", "options": ["...","...","...","..."], "answer": 0 } ] },
-  "bAnswers": [],
-  "b": { "questions": [] },
-  "aAnswers": []
-}
+stage1: {"pv":3,"bv":<int>,"st":1,"g":"<4-8位[a-z0-9]>","q":["<5个bank ID>"],"aa":[<5个0..3>]}
+stage2: {"pv":3,"bv":<int>,"st":2,"g":"同上","q":[...],"aa":[...],"bq":["<5个ID，与q不相交>"],"bg":[...],"ba":[...]}
 ```
 
-- stage=1 链接只携带 `version, stage, a`。
-- stage=2 链接携带 `version, stage, a, bAnswers, b`。
-- `aAnswers` 只在 A 本地内存中产生，**不进入任何 URL**；RESULT 全部本地计算。
-- 题目数组固定 5 项；options 固定 4 项；answer/bAnswers/aAnswers 均为 0..3 整数索引。
+- 题目/选项文字永不进 URL；由本机 window.GUESS_ME_BANK 按 id 还原。
+- A 的最终猜测 ag 只存 A 内存，不进任何 URL。
+- 长度硬门槛：stage1 URL ≤300 字符；stage2 URL ≤500 字符。超出即 FAIL。
 
-## 4. 编码
+## 4. 版本策略
 
-JSON → UTF-8 字节 → Base64 → Base64URL（`+`→`-`，`/`→`_`，去 `=`）。
-仅编码，非加密。解码用严格字符表校验，任何失败走 ERROR。
+- `pv` 协议版本：payload 结构变更才升。当前 3。
+- `bv` 题库版本：题目文字/选项/增删任何变化必须同步递增 window.QUESTION_BANK_VERSION。当前 1。
+- 二者正交。不匹配 → fail-closed 进 ERROR（ERR_PROTOCOL_VERSION / ERR_BANK_VERSION），禁止静默变脸。
+- v1/v2 旧链接在 v3 代码下全部拒绝（预期行为，README 已声明）。
 
-## 5. 校验规则（全部在渲染前完成，任一失败 → ERROR）
+## 5. 校验规则（顺序即优先级，全部渲染前完成，失败→ERROR+内部码）
 
-1. Fragment 长度 > 64000 字符 → 超长，无效。
-2. Base64URL 解码失败 / UTF-8 解码失败 / JSON 解析失败。
-3. 解码后 JSON 文本 > 30000 字符 → 超长，无效。
-4. `version !== 1`；`stage` 非 1/2。
-5. 缺字段：stage=1 缺 `a.questions`；stage=2 缺 `a/b/bAnswers` 任一。
-6. `questions.length !== 5`（a 与 b 分别校验）。
-7. 任一题 `options.length !== 4`；题干 >80 字符；选项 >30 字符；空字符串。
-8. `answer` 非 0..3 整数。
-9. stage=2：`bAnswers.length !== 5` 或含非 0..3 整数。
-10. 创建表单侧：题干/选项为空、未选正确答案 → 内联提示，不生成链接（不进 ERROR 态）。
+1. ERR_EMPTY_FRAGMENT（空 fragment 视为首页，不算错）
+2. ERR_LENGTH（fragment >8000）
+3. ERR_BASE64（字符表 / 解码失败）
+4. ERR_UTF8 / ERR_JSON
+5. ERR_PAYLOAD（非对象）
+6. ERR_PROTOCOL_VERSION（pv≠3）
+7. ERR_BANK_VERSION（bv≠本机题库版本）
+8. ERR_STAGE（st∉{1,2}）
+9. ERR_GAME_ID（格式）
+10. ERR_QUESTION_COUNT（题数组≠5）
+11. ERR_QUESTION_ID（ID 不在本机题库）
+12. ERR_DUPLICATE_QUESTION（stage2 时 q 与 bq 相交）
+13. ERR_ANSWER（答案数组≠5 个 0..3 整数）
+14. ERR_BANK_INTEGRITY / ERR_BANK_SMALL（题库自检失败 / 可用类别<5，本地环境错误）
+用户界面统一显示"这个链接无效或已经损坏。"；ERR_* 显示于 aria-hidden 调试行。
 
 ## 6. 分享
 
-- `navigator.share` 存在且在用户手势内调用；失败/不可用（file:// 等非安全上下文）→ 回退「复制链接」。
-- 复制：`navigator.clipboard.writeText`（安全上下文）→ 回退 `document.execCommand('copy')`（textarea 选中）→ 再回退提示手动选中。
-- 不接微信/QQ SDK。
+navigator.share → 回退 clipboard.writeText → 回退 execCommand → 回退手动选中提示。不接微信/QQ SDK。
 
 ## 7. 结果计算（本地）
 
-- A 得分 = `bAnswers[i] === a.questions[i].answer` 的个数（X/5）。
-- B 得分 = `aAnswers[i] === b.questions[i].answer` 的个数（Y/5）。
+TA猜中你 = #{bg[i]===aa[i]}；你猜中TA = #{ag[i]===ba[i]}。逐题对照按查看者视角标注代词。
 
 ## 8. 隐私红线（代码层面）
 
-全项目禁止出现：`fetch`、`XMLHttpRequest`、`WebSocket`、`EventSource`、`sendBeacon`、`<img src=http`、`<script src=`（外部）、`<link>` 外部字体、Analytics/广告 SDK、`document.cookie`。
-游戏数据仅存于 URL Fragment 与内存；不落盘、不上传。
+全项目禁止：fetch、XMLHttpRequest、WebSocket、EventSource、sendBeacon、外部资源、Analytics/广告 SDK、document.cookie、localStorage/sessionStorage/IndexedDB。游戏数据仅存于 URL Fragment 与内存。
 
 ## 9. 兼容性目标
 
-现代浏览器（Chrome/Edge/Safari/Firefox 近版本），移动端 375px 宽起步，单列自适应布局；系统字体，无外部图片（图标用 emoji/纯 CSS）。
+Chrome/Edge/Firefox/Safari 近版本 + iOS 微信内置浏览器（WKWebView）。移动端 375px 起单列。file:// 可用。链接长度需适应"人在微信里长按复制"：短到一眼完整、不易截尾。
