@@ -85,7 +85,7 @@
   function appendDetail(container,q,given,actual,ok,who){var p=document.createElement('p');p.className='detail-item';p.innerHTML='<b>'+escapeHtml(q.question)+'</b><br><span class="'+(ok?'mark-right':'mark-wrong')+'">'+(ok?'✓ 猜对了：'+LETTERS[actual]+'（'+escapeHtml(q.options[actual])+'）':'✗ 猜错：'+who+'实际选 '+LETTERS[actual]+'（'+escapeHtml(q.options[actual])+'），你选了 '+LETTERS[given]+'（'+escapeHtml(q.options[given])+'）')+'</span>';container.appendChild(p);}
   function escapeHtml(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function reset(){if(location.hash)history.replaceState(null,'',location.pathname+location.search);session={stage:0,payload:null};show('home');}
-  function start(){var qs=cloneQs(sampleQuestions());renderSelfQuiz(qs,'A');session.stage=0;session.payload={version:VERSION,stage:1,aQuestions:qs,aAnswers:[]};show('answer');}
+  function start(){var qs=cloneQs(sampleQuestions());renderSelfQuiz(qs,'A');session.stage=0;session.payload={version:VERSION,stage:1,role:'A_SELF',aQuestions:qs,aAnswers:[]};show('answer');}
   function submit(){
     var a=collect();if(!a){$('answer-error').textContent='还有题目没选。';return;}
     var p=session.payload;
