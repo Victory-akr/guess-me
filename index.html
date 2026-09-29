@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="referrer" content="no-referrer">
 <title>猜猜我</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 <main id="app">
@@ -37,7 +37,7 @@
       <button id="btn-copy" class="btn btn-secondary">复制链接</button>
     </div>
     <p id="copy-feedback" class="hint" aria-live="polite"></p>
-    <p class="privacy-note">链接里的内容包含题目和答案；Base64URL 只是编码，不是加密。</p>
+    <p class="privacy-note">链接包含题目和答案；懂技术的人可以解码直接看到。Base64URL 只是编码，不是加密。请只把链接发给你想一起玩的人。</p>
     <button id="btn-restart-from-share" class="btn btn-text">重新开始</button>
   </section>
   <section id="screen-result" class="screen hidden">
@@ -54,10 +54,11 @@
     <h2>⚠️</h2>
     <p class="error-main">这个链接无效或已经损坏。</p>
     <p class="hint">如果链接被截断，请让对方重新发送完整链接。</p>
+    <p class="hint" id="error-code" aria-hidden="true"></p>
     <button id="btn-home-from-error" class="btn btn-primary">返回首页</button>
   </section>
 </main>
-<script src="question-bank.js"></script>
-<script src="app.js"></script>
+<script src="question-bank.js?v=3"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>
